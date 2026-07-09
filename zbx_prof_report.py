@@ -12,6 +12,7 @@ import html
 import json
 import math
 import os
+import random
 import re
 import sys
 from collections import Counter, defaultdict
@@ -35,7 +36,15 @@ TOTAL_RE = re.compile(
 
 
 def parse_timestamp(date_text, time_text):
-    return datetime.datetime.strptime(date_text + time_text, "%Y%m%d%H%M%S.%f")
+    return datetime.datetime(
+        int(date_text[0:4]),
+        int(date_text[4:6]),
+        int(date_text[6:8]),
+        int(time_text[0:2]),
+        int(time_text[2:4]),
+        int(time_text[4:6]),
+        int(time_text[7:].ljust(6, "0")[:6]),
+    )
 
 
 def fmt_seconds(value):
@@ -65,6 +74,29 @@ def percentile(values, p):
         return values[int(index)]
 
     return values[lo] * (hi - index) + values[hi] * (index - lo)
+
+
+class Reservoir:
+    def __init__(self, limit, rng):
+        self.limit = limit
+        self.rng = rng
+        self.count = 0
+        self.values = []
+
+    def add(self, value):
+        self.count += 1
+        if self.limit <= 0:
+            return
+        if len(self.values) < self.limit:
+            self.values.append(value)
+            return
+
+        index = self.rng.randrange(self.count)
+        if index < self.limit:
+            self.values[index] = value
+
+    def percentile(self, p):
+        return percentile(self.values, p)
 
 
 def top_rows(rows, key, limit):
@@ -287,6 +319,269 @@ def finish_agg(key, agg, fields):
 def bucket_start(ts, bucket_seconds):
     epoch = int(ts.timestamp())
     return datetime.datetime.fromtimestamp(epoch - epoch % bucket_seconds)
+
+
+def add_delta_to_report_state(state, row):
+    if row["kind"] == "summary":
+        if row["function"] == "locking total":
+            add_agg(state["process_aggs"][(row["process"],)], row)
+            add_agg(state["pid_aggs"][(row["process"], row["pid"])], row)
+            add_agg(
+                state["bucket_aggs"][(bucket_start(row["ts"], state["bucket_seconds"]), row["process"])],
+                row,
+            )
+        return
+
+    key = (row["process"], row["function"], row["scope"])
+    add_agg(state["function_aggs"][key], row)
+    state["waiting_samples"][key].add(row["waiting"])
+    state["busy_samples"][key].add(row["busy"])
+
+
+def account_snapshot(state, snapshot):
+    state["snapshot_count"] += 1
+    state["pids"].add(snapshot["pid"])
+    state["snapshot_process_counts"][snapshot["process"]] += 1
+    state["snapshot_pid_counts"][snapshot["process"]].add(snapshot["pid"])
+
+    if state["first_ts"] is None or snapshot["ts"] < state["first_ts"]:
+        state["first_ts"] = snapshot["ts"]
+    if state["last_ts"] is None or snapshot["ts"] > state["last_ts"]:
+        state["last_ts"] = snapshot["ts"]
+
+
+def process_snapshot_delta(state, snapshot):
+    previous_by_pid = state["previous_by_pid"]
+    previous = previous_by_pid.get(snapshot["pid"])
+
+    if previous is None:
+        state["delta_stats"]["skipped_first"] += 1
+        previous_by_pid[snapshot["pid"]] = snapshot
+        return
+
+    if previous["process"] != snapshot["process"]:
+        state["delta_stats"]["skipped_type_change"] += 1
+        previous_by_pid[snapshot["pid"]] = snapshot
+        return
+
+    for key, current_metric in snapshot["metrics"].items():
+        previous_metric = previous["metrics"].get(key)
+        if previous_metric is None:
+            continue
+
+        row = make_delta_row(
+            snapshot, previous, key[0], key[1], current_metric, previous_metric, "function"
+        )
+        if row is None:
+            state["delta_stats"]["skipped_negative"] += 1
+            continue
+        state["delta_rows"] += 1
+        add_delta_to_report_state(state, row)
+
+    for name, current_total in snapshot["totals"].items():
+        previous_total = previous["totals"].get(name)
+        if previous_total is None:
+            continue
+
+        locked = current_total["locked"] - previous_total["locked"]
+        holding = current_total["holding"] - previous_total["holding"]
+        waiting = current_total["waiting"] - previous_total["waiting"]
+
+        if locked < 0 or holding < -1e-9 or waiting < -1e-9:
+            state["delta_stats"]["skipped_negative"] += 1
+            continue
+
+        state["delta_rows"] += 1
+        add_delta_to_report_state(state, {
+            "ts": snapshot["ts"],
+            "pid": snapshot["pid"],
+            "process": snapshot["process"],
+            "function": name,
+            "scope": "summary",
+            "kind": "summary",
+            "busy": 0.0,
+            "locked": locked,
+            "holding": max(0.0, holding),
+            "waiting": max(0.0, waiting),
+        })
+
+    previous_by_pid[snapshot["pid"]] = snapshot
+
+
+def parse_log_streaming(path, bucket_seconds, sample_limit):
+    rng = random.Random(1)
+    state = {
+        "bucket_seconds": bucket_seconds,
+        "first_ts": None,
+        "last_ts": None,
+        "snapshot_count": 0,
+        "pids": set(),
+        "snapshot_process_counts": Counter(),
+        "snapshot_pid_counts": defaultdict(set),
+        "process_aggs": defaultdict(empty_agg),
+        "function_aggs": defaultdict(empty_agg),
+        "pid_aggs": defaultdict(empty_agg),
+        "bucket_aggs": defaultdict(empty_agg),
+        "waiting_samples": defaultdict(lambda: Reservoir(sample_limit, rng)),
+        "busy_samples": defaultdict(lambda: Reservoir(sample_limit, rng)),
+        "previous_by_pid": {},
+        "delta_rows": 0,
+        "delta_stats": {
+            "skipped_first": 0,
+            "skipped_negative": 0,
+            "skipped_type_change": 0,
+        },
+    }
+    current = None
+    line_no = 0
+    malformed = 0
+
+    def finish_current():
+        if current is None:
+            return
+        account_snapshot(state, current)
+        process_snapshot_delta(state, current)
+
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        for line_no, line in enumerate(f, 1):
+            line = line.rstrip("\n")
+
+            if "=== Profiling statistics for " in line:
+                match = HEADER_RE.match(line)
+                if match is not None:
+                    finish_current()
+                    current = {
+                        "pid": int(match.group("pid")),
+                        "process": match.group("process"),
+                        "ts": parse_timestamp(match.group("date"), match.group("time")),
+                        "metrics": {},
+                        "totals": {},
+                        "line": line_no,
+                    }
+                    continue
+
+            if current is None or line == "" or line.startswith("-") or line.startswith("Total blocks:"):
+                continue
+
+            if "() " in line and " : " in line:
+                match = METRIC_RE.match(line)
+                if match is not None:
+                    scope = match.group("scope")
+                    function = match.group("function")
+
+                    current["metrics"][(function, scope)] = {
+                        "busy": float(match.group("busy") or 0.0),
+                        "locked": int(match.group("locked") or 0),
+                        "holding": float(match.group("holding") or 0.0),
+                        "waiting": float(match.group("waiting") or 0.0),
+                        "line": line_no,
+                    }
+                    continue
+
+            if line.startswith(("rwlocks : ", "mutexes : ", "locking total : ")):
+                match = TOTAL_RE.match(line)
+                if match is not None:
+                    current["totals"][match.group("name")] = {
+                        "locked": int(match.group("locked")),
+                        "holding": float(match.group("holding")),
+                        "waiting": float(match.group("waiting")),
+                        "line": line_no,
+                    }
+                    continue
+
+            malformed += 1
+
+    finish_current()
+
+    parse_stats = {"lines": line_no, "malformed": malformed}
+    return state, parse_stats
+
+
+def build_report_data_from_state(path, state, parse_stats, sample_limit, limit):
+    process_rows = [
+        finish_agg(key, value, ["process"])
+        for key, value in state["process_aggs"].items()
+    ]
+    function_rows = [
+        finish_agg(key, value, ["process", "function", "scope"])
+        for key, value in state["function_aggs"].items()
+    ]
+    pid_rows = [
+        finish_agg(key, value, ["process", "pid"])
+        for key, value in state["pid_aggs"].items()
+    ]
+
+    for row in function_rows:
+        key = (row["process"], row["function"], row["scope"])
+        row["p95_waiting"] = state["waiting_samples"][key].percentile(95)
+        row["p95_busy"] = state["busy_samples"][key].percentile(95)
+
+    bucket_rows = []
+    for key, value in state["bucket_aggs"].items():
+        row = finish_agg(key, value, ["bucket", "process"])
+        row["bucket"] = row["bucket"].isoformat(sep=" ")
+        bucket_rows.append(row)
+
+    total_waiting = sum(row["waiting"] for row in process_rows)
+    total_holding = sum(row["holding"] for row in process_rows)
+    total_busy = sum(row["busy"] for row in function_rows if row["scope"] == "processing")
+
+    top_waiting = top_rows(
+        [row for row in function_rows if row["scope"] in ("rwlock", "mutex")],
+        lambda row: row["waiting"],
+        limit,
+    )
+    top_busy = top_rows(
+        [row for row in function_rows if row["scope"] == "processing"],
+        lambda row: row["busy"],
+        limit,
+    )
+    top_avg_wait = top_rows(
+        [row for row in function_rows if row["scope"] in ("rwlock", "mutex") and row["locked"] > 0],
+        lambda row: row["avg_wait_per_lock"],
+        limit,
+    )
+
+    first_ts = state["first_ts"]
+    last_ts = state["last_ts"]
+    snapshot_process_counts = state["snapshot_process_counts"]
+    snapshot_pid_counts = state["snapshot_pid_counts"]
+
+    return {
+        "input": os.path.abspath(path),
+        "generated_at": datetime.datetime.now().isoformat(sep=" ", timespec="seconds"),
+        "bucket_seconds": state["bucket_seconds"],
+        "summary": {
+            "first_ts": first_ts.isoformat(sep=" ") if first_ts else "",
+            "last_ts": last_ts.isoformat(sep=" ") if last_ts else "",
+            "duration_seconds": 0 if not first_ts or not last_ts else (last_ts - first_ts).total_seconds(),
+            "snapshots": state["snapshot_count"],
+            "pids": len(state["pids"]),
+            "processes": len(snapshot_process_counts),
+            "delta_rows": state["delta_rows"],
+            "total_waiting": total_waiting,
+            "total_holding": total_holding,
+            "total_busy": total_busy,
+            "parse_stats": parse_stats,
+            "delta_stats": state["delta_stats"],
+            "p95_sample_limit": sample_limit,
+        },
+        "snapshot_processes": [
+            {
+                "process": process,
+                "snapshots": count,
+                "pid_count": len(snapshot_pid_counts[process]),
+            }
+            for process, count in snapshot_process_counts.most_common()
+        ],
+        "process_rows": sorted(process_rows, key=lambda row: row["waiting"], reverse=True),
+        "function_rows": sorted(function_rows, key=lambda row: row["waiting"] + row["busy"], reverse=True),
+        "pid_rows": sorted(pid_rows, key=lambda row: row["waiting"], reverse=True),
+        "bucket_rows": sorted(bucket_rows, key=lambda row: (row["bucket"], row["process"])),
+        "top_waiting": top_waiting,
+        "top_busy": top_busy,
+        "top_avg_wait": top_avg_wait,
+    }
 
 
 def build_report_data(path, snapshots, parse_stats, delta_rows, delta_stats, bucket_seconds, limit):
@@ -890,6 +1185,15 @@ def parse_args():
         default=20,
         help="Number of rows in top sections. Default: %(default)s"
     )
+    parser.add_argument(
+        "--p95-samples",
+        type=int,
+        default=10000,
+        help=(
+            "Reservoir sample size per function for approximate P95 values. "
+            "Lower values use less memory. Default: %(default)s"
+        )
+    )
     return parser.parse_args()
 
 
@@ -900,15 +1204,16 @@ def main():
         print("Bucket size must be greater than zero.", file=sys.stderr)
         return 2
 
-    snapshots, parse_stats = parse_log(args.log)
-    if not snapshots:
+    if args.p95_samples < 0:
+        print("P95 sample size cannot be negative.", file=sys.stderr)
+        return 2
+
+    state, parse_stats = parse_log_streaming(args.log, args.bucket, args.p95_samples)
+    if state["snapshot_count"] == 0:
         print("No profiler snapshots found.", file=sys.stderr)
         return 1
 
-    delta_rows, delta_stats = build_deltas(snapshots)
-    data = build_report_data(
-        args.log, snapshots, parse_stats, delta_rows, delta_stats, args.bucket, args.top
-    )
+    data = build_report_data_from_state(args.log, state, parse_stats, args.p95_samples, args.top)
 
     write_html(args.output, data)
     if args.json_output:
