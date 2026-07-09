@@ -735,6 +735,17 @@ h3 {{ margin: 18px 0 10px; font-size: 15px; }}
 main {{ padding: 20px 28px 40px; max-width: 1500px; margin: 0 auto; }}
 .subtle {{ color: var(--muted); }}
 header .subtle {{ color: #cfd8dc; }}
+.legend {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+  color: #d8e1e6;
+  font-size: 12px;
+  line-height: 1.35;
+}}
+.legend span {{ white-space: nowrap; }}
+.legend b {{ color: #fff; font-weight: 650; }}
 .grid {{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -831,6 +842,7 @@ tbody tr:hover {{ background: #f9fbfd; }}
 @media (max-width: 700px) {{
   main, header {{ padding-left: 14px; padding-right: 14px; }}
   .split {{ grid-template-columns: 1fr; }}
+  .legend span {{ white-space: normal; }}
   table {{ font-size: 12px; }}
 }}
 </style>
@@ -839,6 +851,15 @@ tbody tr:hover {{ background: #f9fbfd; }}
 <header>
   <h1>Zabbix profiler report</h1>
   <div class="subtle" id="input"></div>
+  <div class="legend" aria-label="Profiler metric legend">
+    <span><b>rwlock</b>: read/write lock scope</span>
+    <span><b>mutex</b>: mutex lock scope</span>
+    <span><b>processing</b>: measured code scope</span>
+    <span><b>locked</b>: lock acquisitions</span>
+    <span><b>waiting</b>: time until lock acquired</span>
+    <span><b>holding</b>: time after acquire until unlock</span>
+    <span><b>busy</b>: processing scope elapsed time</span>
+  </div>
 </header>
 <main>
   <section class="grid" id="summary"></section>
