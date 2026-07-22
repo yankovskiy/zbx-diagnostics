@@ -748,17 +748,57 @@ header .subtle {{ color: #cfd8dc; }}
 .legend b {{ color: #fff; font-weight: 650; }}
 .grid {{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }}
 .card {{
+  position: relative;
+  display: flex;
+  min-height: 102px;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 14px;
+  border-radius: 8px;
+  padding: 15px 16px 14px;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }}
-.metric-label {{ color: var(--muted); font-size: 12px; text-transform: uppercase; }}
-.metric-value {{ font-size: 22px; font-weight: 650; margin-top: 4px; }}
+.card::before {{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--card-accent, var(--accent2));
+  content: '';
+}}
+.card:nth-child(4n + 2) {{ --card-accent: #00838f; }}
+.card:nth-child(4n + 3) {{ --card-accent: #6a1b9a; }}
+.card:nth-child(4n + 4) {{ --card-accent: #ef6c00; }}
+.metric-label {{
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}}
+.metric-value {{
+  margin-top: 10px;
+  font-size: 25px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}}
+.metric-value.period {{
+  display: grid;
+  gap: 5px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.25;
+  white-space: nowrap;
+}}
 .toolbar {{
   display: flex;
   flex-wrap: wrap;
@@ -976,17 +1016,20 @@ function escapeHtml(value) {{
 function metricCards() {{
   const s = DATA.summary;
   const items = [
-    ['Period', s.first_ts + '<br>' + s.last_ts],
-    ['Duration', sec(s.duration_seconds)],
-    ['Snapshots', num(s.snapshots)],
-    ['PIDs', num(s.pids)],
-    ['Processes', num(s.processes)],
-    ['Delta rows', num(s.delta_rows)],
-    ['Total waiting', sec(s.total_waiting)],
-    ['Processing busy', sec(s.total_busy)]
+    {{label:'Period', value:`<span>${{escapeHtml(s.first_ts)}}</span><span>${{escapeHtml(s.last_ts)}}</span>`, className:'period'}},
+    {{label:'Duration', value:sec(s.duration_seconds)}},
+    {{label:'Snapshots', value:num(s.snapshots)}},
+    {{label:'PIDs', value:num(s.pids)}},
+    {{label:'Processes', value:num(s.processes)}},
+    {{label:'Delta rows', value:num(s.delta_rows)}},
+    {{label:'Total waiting', value:sec(s.total_waiting)}},
+    {{label:'Processing busy', value:sec(s.total_busy)}}
   ];
-  document.getElementById('summary').innerHTML = items.map(([label, value]) => `
-    <div class="card"><div class="metric-label">${{label}}</div><div class="metric-value">${{value}}</div></div>
+  document.getElementById('summary').innerHTML = items.map(item => `
+    <div class="card">
+      <div class="metric-label">${{item.label}}</div>
+      <div class="metric-value ${{item.className || ''}}">${{item.value}}</div>
+    </div>
   `).join('');
   document.getElementById('input').textContent = DATA.input + ' · generated ' + DATA.generated_at;
 }}
