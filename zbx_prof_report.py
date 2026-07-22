@@ -820,13 +820,36 @@ tbody tr:hover {{ background: #f9fbfd; }}
   height: 100%;
   background: var(--accent);
 }}
+.chart-wrap {{
+  position: relative;
+  height: 520px;
+}}
 .chart {{
-  height: 320px;
+  display: block;
+  width: 100%;
+  height: 100%;
   border: 1px solid var(--line);
   background: var(--panel);
   border-radius: 6px;
   padding: 8px;
 }}
+.chart-tooltip {{
+  position: absolute;
+  display: none;
+  min-width: 190px;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid #aeb7c4;
+  border-radius: 5px;
+  background: rgba(38, 50, 56, 0.96);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}}
+.chart-tooltip strong {{ display: block; font-size: 13px; }}
 .note {{
   background: #fff8e1;
   border: 1px solid #ffe082;
@@ -843,6 +866,7 @@ tbody tr:hover {{ background: #f9fbfd; }}
   main, header {{ padding-left: 14px; padding-right: 14px; }}
   .split {{ grid-template-columns: 1fr; }}
   .legend span {{ white-space: normal; }}
+  .chart-wrap {{ height: 380px; }}
   table {{ font-size: 12px; }}
 }}
 </style>
@@ -893,7 +917,10 @@ tbody tr:hover {{ background: #f9fbfd; }}
       <select id="timelineProcess"></select>
     </label>
   </div>
-  <canvas class="chart" id="timeline"></canvas>
+  <div class="chart-wrap" id="timelineWrap">
+    <canvas class="chart" id="timeline"></canvas>
+    <div class="chart-tooltip" id="timelineTooltip" role="status"></div>
+  </div>
 
   <h2>Process Types</h2>
   <div id="processTable"></div>
@@ -1083,6 +1110,9 @@ function renderStaticTables() {{
   ], {{defaultSort: {{name:'snapshots', dir:-1}}}});
 }}
 
+let timelineHitAreas = [];
+let timelineHover = null;
+
 function drawTimeline() {{
   const canvas = document.getElementById('timeline');
   const ctx = canvas.getContext('2d');
@@ -1128,14 +1158,30 @@ function drawTimeline() {{
   }}
 
   const barW = Math.max(1, plotW / Math.max(1, buckets.length));
+  timelineHitAreas = [];
   buckets.forEach((bucket, i) => {{
     let y = pad.top + plotH;
     processes.forEach((p, j) => {{
       const row = byKey.get(bucket + '\\t' + p);
       const value = row ? row[metric] : 0;
       const bh = plotH * value / max;
+      const x = pad.left + i * barW;
+      const segmentY = y - bh;
+      const segmentW = Math.max(1, barW - 1);
+      if (bh > 0) {{
+        timelineHitAreas.push({{x, y: segmentY, width: segmentW, height: bh, bucket, process: p, value}});
+      }}
+      if (timelineHover && timelineHover.process !== p) ctx.globalAlpha = 0.22;
       ctx.fillStyle = colors[j % colors.length];
-      ctx.fillRect(pad.left + i * barW, y - bh, Math.max(1, barW - 1), bh);
+      ctx.fillRect(x, segmentY, segmentW, bh);
+      ctx.globalAlpha = 1;
+      if (timelineHover && timelineHover.process === p && timelineHover.bucket === bucket && bh > 0) {{
+        ctx.save();
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, segmentY + 1, Math.max(0, segmentW - 2), Math.max(0, bh - 2));
+        ctx.restore();
+      }}
       y -= bh;
     }});
   }});
@@ -1149,6 +1195,45 @@ function drawTimeline() {{
   ctx.fillText(`bucket: ${{DATA.bucket_seconds}}s`, pad.left, h - 8);
 }}
 
+function timelineHitAt(x, y) {{
+  for (let i = timelineHitAreas.length - 1; i >= 0; i--) {{
+    const area = timelineHitAreas[i];
+    if (x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height) return area;
+  }}
+  return null;
+}}
+
+function hideTimelineTooltip() {{
+  const tooltip = document.getElementById('timelineTooltip');
+  tooltip.style.display = 'none';
+}}
+
+function showTimelineTooltip(area, event) {{
+  const tooltip = document.getElementById('timelineTooltip');
+  const wrap = document.getElementById('timelineWrap');
+  const metric = document.getElementById('timelineMetric').value;
+  const formatted = metric === 'locked' ? num(area.value) : sec(area.value);
+  tooltip.innerHTML = `<strong>${{escapeHtml(area.process)}}</strong>${{escapeHtml(area.bucket)}}<br>${{escapeHtml(metric)}}: ${{escapeHtml(formatted)}}`;
+  tooltip.style.display = 'block';
+
+  const wrapRect = wrap.getBoundingClientRect();
+  const gap = 12;
+  let left = event.clientX - wrapRect.left + gap;
+  let top = event.clientY - wrapRect.top + gap;
+  left = Math.min(left, wrap.clientWidth - tooltip.offsetWidth - 6);
+  top = Math.min(top, wrap.clientHeight - tooltip.offsetHeight - 6);
+  tooltip.style.left = Math.max(6, left) + 'px';
+  tooltip.style.top = Math.max(6, top) + 'px';
+}}
+
+function resetTimelineHover() {{
+  if (timelineHover) {{
+    timelineHover = null;
+    drawTimeline();
+  }}
+  hideTimelineTooltip();
+}}
+
 metricCards();
 fillFilters();
 renderTopTables();
@@ -1159,9 +1244,32 @@ drawTimeline();
 document.getElementById('functionSearch').addEventListener('input', renderFunctions);
 document.getElementById('scopeFilter').addEventListener('change', renderFunctions);
 document.getElementById('processFilter').addEventListener('change', renderFunctions);
-document.getElementById('timelineMetric').addEventListener('change', drawTimeline);
-document.getElementById('timelineProcess').addEventListener('change', drawTimeline);
-window.addEventListener('resize', drawTimeline);
+for (const id of ['timelineMetric', 'timelineProcess']) {{
+  document.getElementById(id).addEventListener('change', () => {{
+    timelineHover = null;
+    hideTimelineTooltip();
+    drawTimeline();
+  }});
+}}
+document.getElementById('timeline').addEventListener('mousemove', event => {{
+  const rect = event.currentTarget.getBoundingClientRect();
+  const area = timelineHitAt(event.clientX - rect.left, event.clientY - rect.top);
+  if (!area) {{
+    resetTimelineHover();
+    return;
+  }}
+  if (!timelineHover || timelineHover.process !== area.process || timelineHover.bucket !== area.bucket) {{
+    timelineHover = {{process: area.process, bucket: area.bucket}};
+    drawTimeline();
+  }}
+  showTimelineTooltip(area, event);
+}});
+document.getElementById('timeline').addEventListener('mouseleave', resetTimelineHover);
+window.addEventListener('resize', () => {{
+  timelineHover = null;
+  hideTimelineTooltip();
+  drawTimeline();
+}});
 </script>
 </body>
 </html>
