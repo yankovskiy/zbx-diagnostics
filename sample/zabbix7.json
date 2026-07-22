@@ -1,0 +1,778 @@
+{
+  "server": {
+    "name": "Zabbix Server",
+    "diaginfo": {
+      "historycache": {
+        "items": 600,
+        "values": 600,
+        "memory": {
+          "data": {
+            "size": {
+              "free": 8330624,
+              "used": 38400
+            },
+            "chunks": {
+              "free": 1,
+              "used": 1200,
+              "min": 8330624,
+              "max": 8330624,
+              "buckets": [
+                {
+                  "256+": 1
+                }
+              ]
+            }
+          },
+          "index": {
+            "size": {
+              "free": 4098520,
+              "used": 85640
+            },
+            "chunks": {
+              "free": 4,
+              "used": 606,
+              "min": 8072,
+              "max": 3983864,
+              "buckets": [
+                {
+                  "256+": 4
+                }
+              ]
+            }
+          }
+        },
+        "top": {
+          "values": [
+            {
+              "itemid": 206180,
+              "values": 1
+            },
+            {
+              "itemid": 197060,
+              "values": 1
+            },
+            {
+              "itemid": 206340,
+              "values": 1
+            },
+            {
+              "itemid": 198990,
+              "values": 1
+            },
+            {
+              "itemid": 196980,
+              "values": 1
+            },
+            {
+              "itemid": 198710,
+              "values": 1
+            },
+            {
+              "itemid": 206760,
+              "values": 1
+            },
+            {
+              "itemid": 206880,
+              "values": 1
+            },
+            {
+              "itemid": 205970,
+              "values": 1
+            },
+            {
+              "itemid": 198840,
+              "values": 1
+            },
+            {
+              "itemid": 207970,
+              "values": 1
+            },
+            {
+              "itemid": 199140,
+              "values": 1
+            },
+            {
+              "itemid": 196960,
+              "values": 1
+            },
+            {
+              "itemid": 208480,
+              "values": 1
+            },
+            {
+              "itemid": 205700,
+              "values": 1
+            },
+            {
+              "itemid": 197820,
+              "values": 1
+            },
+            {
+              "itemid": 198650,
+              "values": 1
+            },
+            {
+              "itemid": 207600,
+              "values": 1
+            },
+            {
+              "itemid": 208360,
+              "values": 1
+            },
+            {
+              "itemid": 207110,
+              "values": 1
+            },
+            {
+              "itemid": 198260,
+              "values": 1
+            },
+            {
+              "itemid": 198250,
+              "values": 1
+            },
+            {
+              "itemid": 198880,
+              "values": 1
+            },
+            {
+              "itemid": 197420,
+              "values": 1
+            },
+            {
+              "itemid": 206240,
+              "values": 1
+            }
+          ]
+        },
+        "time": 3.4e-05
+      },
+      "valuecache": {
+        "items": 45,
+        "values": 585,
+        "mode": 0,
+        "memory": {
+          "size": {
+            "free": 8344504,
+            "used": 38312
+          },
+          "chunks": {
+            "free": 82,
+            "used": 257,
+            "min": 32,
+            "max": 8339256,
+            "buckets": [
+              {
+                "32": 6
+              },
+              {
+                "48": 12
+              },
+              {
+                "64": 35
+              },
+              {
+                "80": 28
+              },
+              {
+                "256+": 1
+              }
+            ]
+          }
+        },
+        "top": {
+          "values": [
+            {
+              "itemid": 61237,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61235,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61294,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61293,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61238,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61295,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61236,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61242,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61270,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61250,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61253,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61241,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61276,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61282,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61268,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61249,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61246,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61239,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61247,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61265,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61248,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61273,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61251,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61286,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61263,
+              "values": 14,
+              "request.values": 0
+            }
+          ],
+          "request.values": [
+            {
+              "itemid": 61237,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61235,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61294,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61293,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61238,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61295,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61236,
+              "values": 16,
+              "request.values": 0
+            },
+            {
+              "itemid": 61242,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61270,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61250,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61253,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61241,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61276,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61282,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61268,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61249,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61246,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61239,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61247,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61265,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61248,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61273,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61251,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61286,
+              "values": 14,
+              "request.values": 0
+            },
+            {
+              "itemid": 61263,
+              "values": 14,
+              "request.values": 0
+            }
+          ]
+        },
+        "time": 3.6e-05
+      },
+      "preprocessing": {
+        "cached items": 42,
+        "pending tasks": 0,
+        "finished tasks": 0,
+        "task sequences": 0,
+        "queued count": 347,
+        "queued size": 37386,
+        "direct count": 132,
+        "direct size": 1184304,
+        "history size": 1935,
+        "top": {
+          "peak": [
+            {
+              "itemid": 61279,
+              "tasks": 2
+            },
+            {
+              "itemid": 61278,
+              "tasks": 2
+            },
+            {
+              "itemid": 61234,
+              "tasks": 2
+            },
+            {
+              "itemid": 208676,
+              "tasks": 2
+            }
+          ],
+          "sequences": [],
+          "values_num": [
+            {
+              "itemid": 61287,
+              "values_num": 22
+            },
+            {
+              "itemid": 205670,
+              "values_num": 22
+            },
+            {
+              "itemid": 205673,
+              "values_num": 22
+            },
+            {
+              "itemid": 61288,
+              "values_num": 22
+            },
+            {
+              "itemid": 61285,
+              "values_num": 22
+            },
+            {
+              "itemid": 61290,
+              "values_num": 22
+            },
+            {
+              "itemid": 61279,
+              "values_num": 22
+            },
+            {
+              "itemid": 196646,
+              "values_num": 22
+            },
+            {
+              "itemid": 61230,
+              "values_num": 22
+            },
+            {
+              "itemid": 61300,
+              "values_num": 22
+            },
+            {
+              "itemid": 196640,
+              "values_num": 22
+            },
+            {
+              "itemid": 61299,
+              "values_num": 22
+            },
+            {
+              "itemid": 61302,
+              "values_num": 22
+            },
+            {
+              "itemid": 196643,
+              "values_num": 22
+            },
+            {
+              "itemid": 61301,
+              "values_num": 22
+            },
+            {
+              "itemid": 205667,
+              "values_num": 22
+            },
+            {
+              "itemid": 61292,
+              "values_num": 21
+            },
+            {
+              "itemid": 61234,
+              "values_num": 21
+            },
+            {
+              "itemid": 61298,
+              "values_num": 21
+            },
+            {
+              "itemid": 61296,
+              "values_num": 21
+            },
+            {
+              "itemid": 61297,
+              "values_num": 21
+            },
+            {
+              "itemid": 61278,
+              "values_num": 19
+            }
+          ],
+          "values_sz": [
+            {
+              "itemid": 205670,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 205673,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 196646,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 196640,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 196643,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 205667,
+              "values_sz": 197384
+            },
+            {
+              "itemid": 61278,
+              "values_sz": 8721
+            },
+            {
+              "itemid": 61234,
+              "values_sz": 3584
+            },
+            {
+              "itemid": 61279,
+              "values_sz": 2244
+            },
+            {
+              "itemid": 61290,
+              "values_sz": 1870
+            },
+            {
+              "itemid": 61230,
+              "values_sz": 1782
+            },
+            {
+              "itemid": 61287,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61288,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61285,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61300,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61299,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61302,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61301,
+              "values_sz": 1716
+            },
+            {
+              "itemid": 61292,
+              "values_sz": 1638
+            },
+            {
+              "itemid": 61298,
+              "values_sz": 1638
+            },
+            {
+              "itemid": 61296,
+              "values_sz": 1638
+            },
+            {
+              "itemid": 61297,
+              "values_sz": 1638
+            }
+          ],
+          "time_ms": [],
+          "total_ms": [
+            {
+              "itemid": 208681,
+              "total_ms": 20
+            },
+            {
+              "itemid": 61306,
+              "total_ms": 10
+            },
+            {
+              "itemid": 208680,
+              "total_ms": 10
+            },
+            {
+              "itemid": 61307,
+              "total_ms": 10
+            },
+            {
+              "itemid": 208685,
+              "total_ms": 10
+            },
+            {
+              "itemid": 61308,
+              "total_ms": 10
+            }
+          ]
+        },
+        "time": 0.001379
+      },
+      "alerting": {
+        "alerts": 0,
+        "top": {
+          "media.alerts": [],
+          "source.alerts": []
+        },
+        "time": 0.000543
+      },
+      "lld": {
+        "rules": 0,
+        "values": 0,
+        "top": {
+          "values": []
+        },
+        "time": 0.000347
+      },
+      "connector": {
+        "queued": 0,
+        "top": {
+          "values": []
+        },
+        "time": 1e-06
+      }
+    }
+  },
+  "proxies": [
+    {
+      "proxyid": "1",
+      "name": "ZP1",
+      "diaginfo": {
+        "historycache": {
+          "items": 0,
+          "values": 0,
+          "memory": {
+            "data": {
+              "size": {
+                "free": 16776832,
+                "used": 0
+              },
+              "chunks": {
+                "free": 1,
+                "used": 0,
+                "min": 16776832,
+                "max": 16776832,
+                "buckets": [
+                  {
+                    "256+": 1
+                  }
+                ]
+              }
+            },
+            "index": {
+              "size": {
+                "free": 4184816,
+                "used": 9040
+              },
+              "chunks": {
+                "free": 1,
+                "used": 3,
+                "min": 4184816,
+                "max": 4184816,
+                "buckets": [
+                  {
+                    "256+": 1
+                  }
+                ]
+              }
+            }
+          },
+          "top": {
+            "values": []
+          },
+          "time": 5e-06
+        },
+        "preprocessing": {
+          "cached items": 0,
+          "pending tasks": 0,
+          "finished tasks": 0,
+          "task sequences": 0,
+          "queued count": 0,
+          "queued size": 0,
+          "direct count": 0,
+          "direct size": 0,
+          "history size": 0,
+          "top": {
+            "peak": [],
+            "sequences": [],
+            "values_num": [],
+            "values_sz": [],
+            "time_ms": [],
+            "total_ms": []
+          },
+          "time": 0.001314
+        }
+      }
+    }
+  ]
+}
