@@ -96,24 +96,43 @@ python3 zbx_prof_report.py profiling.log --json report.json
 
 Проверка файла конфигурации Zabbix-сервера (zabbix_server.conf):
 
-- проверка обязательных параметров (список задается константой `REQUIRED_PARAMS` в начале скрипта);
+- проверка обязательных параметров (список задается константами `REQUIRED_PARAMS_V6` / `REQUIRED_PARAMS_V7` в начале скрипта);
 - оценка объема памяти, выделяемой под кэши (сумма всех настраиваемых кэшей с учетом значений по умолчанию и условий их выделения);
 - оценка количества соединений с базой данных с детализацией по параметрам, в том числе отсутствующим в конфиге (значения по умолчанию выводятся отдельным блоком).
 
 Значения по умолчанию и поведение процессов взяты из исходного кода Zabbix-сервера (директория `zabbix/`).
 
+## Поддерживаемые версии
+
+Скрипт учитывает отличия Zabbix 6 и Zabbix 7: набор известных параметров конфига, значения по умолчанию и список процессов, держащих соединение с БД. Версия выбирается параметром `--zabbix-version`.
+
+Основные отличия Zabbix 7, учтённые скриптом:
+
+- удалены параметры системного аудита (`EnableSystemAudit` и связанные);
+- `StartPollers` дополнен новыми типами poller'ов (`StartAgentPollers`, `StartSNMPPollers`, `StartHTTPAgentPollers`, `StartBrowserPollers`);
+- новые параметры и процессы (`StartConnectors`, configuration syncer worker, proxy group manager, discovery manager и др.);
+- изменённые значения по умолчанию (`StartDiscoverers`, `StartPreprocessors`).
+
 ## Использование
 
 ```
-python3 zbx_conf_check.py <путь до zabbix_server.conf>
+python3 zbx_conf_check.py <путь до zabbix_server.conf> [--zabbix-version {6,7}]
 ```
+
+| Параметр | Описание | По умолчанию |
+|---|---|---|
+| `--zabbix-version` | Версия Zabbix, для которой проверяется конфиг (`6` или `7`) | `6` |
 
 Код возврата: `0` — все обязательные параметры заданы, `1` — есть незаданные параметры или файл не прочитан.
 
 ## Примеры
 
 ```bash
+# Проверка конфига Zabbix 6 (поведение по умолчанию)
 python3 zbx_conf_check.py /etc/zabbix/zabbix_server.conf
+
+# Проверка конфига Zabbix 7
+python3 zbx_conf_check.py --zabbix-version 7 /etc/zabbix/zabbix_server.conf
 ```
 
 ---
